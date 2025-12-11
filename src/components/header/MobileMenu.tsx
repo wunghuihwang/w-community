@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Home, Menu, PenSquare, TrendingUp, User, X } from 'lucide-react';
+import { Bell, FileText, Home, Menu, PenSquare, TrendingUp, User, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -15,6 +15,7 @@ export const MobileMenu = ({
 
     const menuItems = [
         { icon: Home, label: '홈', page: 'home' },
+        { icon: FileText, label: '게시글', page: 'posts' },
         { icon: TrendingUp, label: '인기글', page: 'trending' },
         ...(isLoggedIn
             ? [

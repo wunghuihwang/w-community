@@ -12,7 +12,7 @@ export const PostCard = ({ post, onClick }: { post: Post; onClick: () => void })
             onClick={onClick}
         >
             <div className="flex items-start gap-4">
-                <div className="w-11 h-11 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold flex-shrink-0 border border-gray-300">
+                <div className="w-11 h-11 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold shrink-0 border border-gray-300">
                     {post.author[0].toUpperCase()}
                 </div>
 

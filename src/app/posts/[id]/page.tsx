@@ -84,7 +84,7 @@ const DetailPage = () => {
                     {/* 댓글 입력 */}
                     <div className="mb-6">
                         <div className="flex gap-3">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold flex-shrink-0 border border-gray-300">
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold shrink-0 border border-gray-300">
                                 W
                             </div>
                             <div className="flex-1">
@@ -112,7 +112,7 @@ const DetailPage = () => {
                     <div className="space-y-4">
                         {mockComments.map((c) => (
                             <div key={c.id} className="flex gap-3 p-4 hover:bg-gray-50 rounded-lg transition-colors">
-                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold flex-shrink-0 border border-gray-300">
+                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold shrink-0 border border-gray-300">
                                     {c.author[0].toUpperCase()}
                                 </div>
                                 <div className="flex-1">

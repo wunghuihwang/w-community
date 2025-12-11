@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, PenSquare, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { NotificationDropdown } from '../NotificationDropdown';
 import { MobileMenu } from '../header/MobileMenu';
 import { SearchBar } from '../header/SearchBar';
 import { UserMenu } from '../header/UserMenu';
@@ -11,8 +12,9 @@ import { WLogo } from '../header/WLogo';
 
 export const Header = () => {
     const router = useRouter();
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(true);
     const [showMobileSearch, setShowMobileSearch] = useState(false);
+    const [notificationOpen, setNotificationOpen] = useState(false);
 
     return (
         <motion.header
@@ -43,10 +45,25 @@ export const Header = () => {
                                 <PenSquare className="w-5 h-5" />
                                 <span>글쓰기</span>
                             </motion.button>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
-                                <Bell className="w-6 h-6 text-gray-600" />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
-                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setNotificationOpen(!notificationOpen)}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative"
+                                >
+                                    <Bell className="w-6 h-6 text-gray-600" />
+                                    <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                                </button>
+
+                                {/* 알림 드롭다운 */}
+                                <AnimatePresence>
+                                    {notificationOpen && (
+                                        <NotificationDropdown
+                                            isOpen={notificationOpen}
+                                            onClose={() => setNotificationOpen(false)}
+                                        />
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </>
                     )}
                     <UserMenu isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />

@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
     /* config options here */
     reactCompiler: true,
     images: {
-        domains: ['your-supabase-project.supabase.co', 'images.unsplash.com'],
+        domains: ['https://mapbkickscojminolnoa.supabase.co', 'images.unsplash.com'],
     },
 };
 
