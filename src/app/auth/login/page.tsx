@@ -1,17 +1,32 @@
 'use client';
 import { WLogo } from '@/components/header/WLogo';
+import { useLoginRequest } from '@/query/auth';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const LoginPage = (setIsLoggedIn: (val: boolean) => void) => {
+const LoginPage = ({ setIsLoggedIn }: { setIsLoggedIn: (val: boolean) => void }) => {
     const router = useRouter();
+    const loginMutation = useLoginRequest();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleLogin = () => {
-        setIsLoggedIn(true);
-        router.push('/home');
+        try {
+            console.log(email);
+            console.log(password);
+            loginMutation.mutate(
+                { email: email, password: password },
+                {
+                    onSuccess: () => {
+                        // setIsLoggedIn(true);
+                        router.push('/');
+                    },
+                },
+            );
+        } catch (err) {
+            console.log('err:', err);
+        }
     };
 
     return (
@@ -35,7 +50,7 @@ const LoginPage = (setIsLoggedIn: (val: boolean) => void) => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="your@email.com"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-3 border text-gray-900 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
                     </div>
 
@@ -46,7 +61,7 @@ const LoginPage = (setIsLoggedIn: (val: boolean) => void) => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-3 border text-gray-900 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
                     </div>
 
