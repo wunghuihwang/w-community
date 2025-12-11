@@ -38,7 +38,7 @@ const DetailPage = () => {
                     {/* 작성자 정보 */}
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold border border-gray-300">
-                            {selectedPost.author[0].toUpperCase()}
+                            {selectedPost.author.toUpperCase()}
                         </div>
                         <div>
                             <div className="font-semibold text-gray-900">{selectedPost.author}</div>
