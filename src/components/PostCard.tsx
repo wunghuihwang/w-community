@@ -1,17 +1,6 @@
+import { Post } from '@/types';
 import { motion } from 'framer-motion';
 import { Eye, Heart, MessageCircle } from 'lucide-react';
-
-type Post = {
-    id: number;
-    author: string;
-    time: string;
-    title: string;
-    content: string;
-    image?: string;
-    likes: number;
-    comments: number;
-    views: number;
-};
 
 export const PostCard = ({ post, onClick }: { post: Post; onClick: () => void }) => {
     return (

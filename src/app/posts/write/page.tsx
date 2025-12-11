@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import { Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +12,7 @@ const WritePage = () => {
 
     const handleSubmit = () => {
         alert('게시글이 작성되었습니다!');
-        router.push('/home');
+        router.push('/');
     };
 
     return (
@@ -73,7 +75,7 @@ const WritePage = () => {
                         <motion.button
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
-                            onClick={() => router.push('/home')}
+                            onClick={() => router.back()}
                             className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                         >
                             취소

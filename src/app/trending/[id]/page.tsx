@@ -1,13 +1,24 @@
 'use client';
 
 import { PostDetailActions } from '@/components/PostDetailsActions';
-import { usePostsStore } from '@/store/usePostsStore';
+import { useTrendingStore } from '@/store/useTrendingStore';
 import { motion } from 'framer-motion';
 import { Bookmark, Heart, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
+type Post = {
+    id: number;
+    author: string;
+    time: string;
+    title: string;
+    content: string;
+    image?: string;
+    likes: number;
+    comments: number;
+    views: number;
+};
 const DetailPage = () => {
-    const { selectedPost } = usePostsStore();
+    const { selectedPost } = useTrendingStore();
     const [comment, setComment] = useState('');
     const [liked, setLiked] = useState(false);
     const mockComments = [
@@ -27,7 +38,7 @@ const DetailPage = () => {
                     {/* 작성자 정보 */}
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-semibold border border-gray-300">
-                            {selectedPost.author.toUpperCase()}
+                            {selectedPost.author[0].toUpperCase()}
                         </div>
                         <div>
                             <div className="font-semibold text-gray-900">{selectedPost.author}</div>

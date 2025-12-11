@@ -71,7 +71,7 @@ export const UserMenu = ({
                         </button>
                         <button
                             onClick={() => {
-                                router.push('/settings');
+                                router.push('/profile/setting');
                                 setDropdownOpen(false);
                             }}
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
@@ -83,7 +83,7 @@ export const UserMenu = ({
                         <button
                             onClick={() => {
                                 setIsLoggedIn(false);
-                                router.push('/home');
+                                router.push('/');
                                 setDropdownOpen(false);
                             }}
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors text-gray-700"

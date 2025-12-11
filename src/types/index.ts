@@ -1,19 +1,14 @@
-export interface Post {
-    id: string;
-    user_id: string;
+export type Post = {
+    id: number;
+    author: string;
+    time: string;
     title: string;
     content: string;
-    images: string[];
-    like_count: number;
-    view_count: number;
-    created_at: string;
-    updated_at: string;
-    profiles: {
-        username: string;
-        avatar_url: string;
-    };
-}
-
+    image?: string;
+    likes: number;
+    comments: number;
+    views: number;
+};
 export interface Comment {
     id: string;
     post_id: string;

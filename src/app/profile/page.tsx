@@ -1,9 +1,11 @@
 'use client';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const ProfilePage = () => {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState('posts');
 
     const myPosts = [
@@ -45,6 +47,7 @@ const ProfilePage = () => {
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
+                            onClick={() => router.push('/profile/edit')}
                             className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                             프로필 수정

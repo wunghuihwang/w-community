@@ -8,14 +8,13 @@ const HomePage = () => {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('latest');
 
-    const mockPosts = [
+    const latestPosts = [
         {
             id: 1,
             author: '개발자W',
             time: '2시간 전',
             title: 'Next.js 14로 풀스택 커뮤니티 만들기',
-            content:
-                'App Router와 Server Components를 활용해서 최신 Next.js로 커뮤니티를 만들어봤어요. Supabase와의 조합이 정말 환상적이네요!',
+            content: 'App Router와 Server Components를 활용해서 최신 Next.js로 커뮤니티를 만들어봤어요.',
             image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
             likes: 42,
             comments: 12,
@@ -26,26 +25,49 @@ const HomePage = () => {
             author: '디자이너Kim',
             time: '5시간 전',
             title: '2024 웹 디자인 트렌드 총정리',
-            content:
-                '올해는 미니멀리즘과 심플한 UI가 대세입니다. 과도한 장식보다는 깔끔하고 직관적인 디자인이 주목받고 있어요.',
+            content: '올해는 미니멀리즘과 심플한 UI가 대세입니다.',
             likes: 89,
             comments: 23,
             views: 456,
         },
+    ];
+
+    const trendingPosts = [
         {
-            id: 3,
-            author: 'TechLover',
+            id: 4,
+            author: 'CodeMaster',
             time: '1일 전',
-            title: 'TypeScript 5.0 새로운 기능 정리',
-            content:
-                'TypeScript 5.0에서 추가된 decorator 기능과 성능 개선 사항들을 정리해봤습니다. 체감 속도가 확실히 빨라졌네요!',
-            image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800',
-            likes: 156,
-            comments: 34,
-            views: 678,
+            title: 'React 19 베타 버전 핵심 기능 정리',
+            content: 'React 19에서 추가될 새로운 기능들을 미리 살펴봅시다. Server Components가 더 강력해졌어요!',
+            image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
+            likes: 523,
+            comments: 87,
+            views: 2340,
+        },
+        {
+            id: 5,
+            author: 'UXDesigner',
+            time: '2일 전',
+            title: '사용자 경험을 높이는 10가지 디자인 원칙',
+            content: '실무에서 바로 적용할 수 있는 UX 디자인 팁들을 공유합니다.',
+            likes: 412,
+            comments: 56,
+            views: 1890,
+        },
+        {
+            id: 6,
+            author: 'AIEnthusiast',
+            time: '3일 전',
+            title: 'ChatGPT API를 활용한 챗봇 만들기',
+            content: 'OpenAI API를 사용해서 간단한 챗봇을 구현하는 방법을 알아봅시다.',
+            likes: 367,
+            comments: 45,
+            views: 1567,
         },
     ];
 
+    const displayPosts = activeTab === 'latest' ? latestPosts : trendingPosts;
+    const displayRoutets = activeTab === 'latest' ? 'posts' : 'trending';
     return (
         <div className="min-h-screen bg-gray-50 pt-24 pb-12">
             <div className="max-w-4xl mx-auto px-4">
@@ -72,7 +94,7 @@ const HomePage = () => {
 
                 {/* 게시글 목록 */}
                 <div className="space-y-4">
-                    {mockPosts.map((post, index) => (
+                    {displayPosts.map((post, index) => (
                         <motion.div
                             key={post.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -82,8 +104,7 @@ const HomePage = () => {
                             <PostCard
                                 post={post}
                                 onClick={() => {
-                                    // setSelectedPost(post);
-                                    router.push(`/posts/${post.id}`);
+                                    router.push(`/${displayRoutets}/${post.id}`);
                                 }}
                             />
                         </motion.div>
@@ -92,7 +113,10 @@ const HomePage = () => {
 
                 {/* 더보기 */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 flex justify-center">
-                    <button className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 transition-all font-medium text-gray-700">
+                    <button
+                        className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 transition-all font-medium text-gray-700"
+                        onClick={() => router.push(`/${displayRoutets}`)}
+                    >
                         더 보기
                     </button>
                 </motion.div>
