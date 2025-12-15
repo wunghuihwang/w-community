@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuthStore } from '@/store/useAuthStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, PenSquare, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -12,7 +13,8 @@ import { WLogo } from '../header/WLogo';
 
 export const Header = () => {
     const router = useRouter();
-    const [isLoggedIn, setIsLoggedIn] = useState(true);
+    const { user } = useAuthStore();
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
 
@@ -34,7 +36,7 @@ export const Header = () => {
 
                 {/* 데스크톱 네비게이션 */}
                 <div className="hidden md:flex items-center gap-4">
-                    {isLoggedIn && (
+                    {user && (
                         <>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
@@ -66,7 +68,7 @@ export const Header = () => {
                             </div>
                         </>
                     )}
-                    <UserMenu isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+                    <UserMenu />
                 </div>
 
                 <div className="flex md:hidden items-center gap-2">
@@ -76,7 +78,7 @@ export const Header = () => {
                     >
                         <Search className="w-6 h-6 text-gray-600" />
                     </button>
-                    <MobileMenu isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+                    <MobileMenu />
                 </div>
             </div>
 

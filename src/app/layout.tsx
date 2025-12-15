@@ -1,5 +1,7 @@
 import { Providers } from '@/components/Providers';
+import { AuthInitializer } from '@/components/layout/AuthInitializer';
 import { Header } from '@/components/layout/Header';
+import { ReactQueryClientProvider } from '@/components/layout/ReactQueryClientProvider';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -25,13 +27,16 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
-            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-                <Providers>
-                    <Header />
-                    {children}
-                </Providers>
-            </body>
-        </html>
+        <ReactQueryClientProvider>
+            <html lang="en">
+                <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+                    <Providers>
+                        <AuthInitializer />
+                        <Header />
+                        {children}
+                    </Providers>
+                </body>
+            </html>
+        </ReactQueryClientProvider>
     );
 }

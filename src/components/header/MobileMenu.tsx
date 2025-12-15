@@ -1,23 +1,19 @@
+import { useAuthStore } from '@/store/useAuthStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, FileText, Home, Menu, PenSquare, TrendingUp, User, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export const MobileMenu = ({
-    isLoggedIn,
-    setIsLoggedIn,
-}: {
-    isLoggedIn: boolean;
-    setIsLoggedIn: (isLoggedIn: boolean) => void;
-}) => {
+export const MobileMenu = () => {
     const router = useRouter();
+    const { user } = useAuthStore();
     const [isOpen, setIsOpen] = useState(false);
 
     const menuItems = [
         { icon: Home, label: '홈', page: 'home' },
         { icon: FileText, label: '게시글', page: 'posts' },
         { icon: TrendingUp, label: '인기글', page: 'trending' },
-        ...(isLoggedIn
+        ...(user
             ? [
                   { icon: PenSquare, label: '글쓰기', page: 'posts/write' },
                   { icon: Bell, label: '알림', page: 'notifications' },
@@ -77,7 +73,7 @@ export const MobileMenu = ({
                                     );
                                 })}
 
-                                {!isLoggedIn && (
+                                {!user && (
                                     <>
                                         <div className="border-t border-gray-200 my-2" />
                                         <button

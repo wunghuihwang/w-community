@@ -1,27 +1,32 @@
 'use client';
 
 import useSupabaseBrowser from '@/lib/supabase/supabase-browser';
-import { useCreatePost } from '@/query/posts';
+import { useSelectPost, useUpdatePost } from '@/query/posts';
 import { useAuthStore } from '@/store/useAuthStore';
 import { motion } from 'framer-motion';
-import { Upload, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { ArrowLeft, Upload, X } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
-const WritePage = () => {
+const EditPage = () => {
     const router = useRouter();
+    const params = useParams();
     const supabase = useSupabaseBrowser();
     const { user } = useAuthStore();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const [postId, setPostId] = useState<string>('');
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [category, setCategory] = useState('general');
-    const [images, setImages] = useState<File[]>([]);
-    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
+    const [newImages, setNewImages] = useState<File[]>([]);
+    const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const createPostMutation = useCreatePost();
+    const { data: postData } = useSelectPost(postId);
+    const updatePostMutation = useUpdatePost();
 
     // 카테고리 옵션
     const categories = [
@@ -31,15 +36,40 @@ const WritePage = () => {
         { value: 'business', label: '비즈니스' },
     ];
 
-    // 이미지 파일 선택 처리
+    // URL에서 postId 가져오기
+    useEffect(() => {
+        if (params.id) {
+            setPostId(Array.isArray(params.id) ? params.id[0] : params.id);
+        }
+    }, [params.id]);
+
+    // 게시글 데이터 로드
+    useEffect(() => {
+        if (postData) {
+            // 권한 체크
+            if (postData.user_id !== user?.id) {
+                alert('수정 권한이 없습니다.');
+                router.back();
+                return;
+            }
+
+            setTitle(postData.title);
+            setContent(postData.content);
+            setCategory(postData.category || 'general');
+            setExistingImages(postData.images || []);
+            setIsLoading(false);
+        }
+    }, [postData, user, router]);
+
+    // 새 이미지 파일 선택 처리
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
 
         const fileArray = Array.from(files);
 
-        // 최대 5개 이미지 제한
-        if (images.length + fileArray.length > 5) {
+        // 최대 5개 이미지 제한 (기존 + 새로운)
+        if (existingImages.length + newImages.length + fileArray.length > 5) {
             alert('이미지는 최대 5개까지 업로드할 수 있습니다.');
             return;
         }
@@ -66,22 +96,26 @@ const WritePage = () => {
                 if (e.target?.result) {
                     newPreviews.push(e.target.result as string);
                     if (newPreviews.length === imageFiles.length) {
-                        setImagePreviews((prev) => [...prev, ...newPreviews]);
+                        setNewImagePreviews((prev) => [...prev, ...newPreviews]);
                     }
                 }
             };
             reader.readAsDataURL(file);
         });
 
-        setImages((prev) => [...prev, ...imageFiles]);
+        setNewImages((prev) => [...prev, ...imageFiles]);
     };
 
-    // 이미지 제거
-    const handleRemoveImage = (index: number) => {
-        setImages((prev) => prev.filter((_, i) => i !== index));
-        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    // 기존 이미지 제거
+    const handleRemoveExistingImage = (index: number) => {
+        setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    };
 
-        // file input 초기화
+    // 새 이미지 제거
+    const handleRemoveNewImage = (index: number) => {
+        setNewImages((prev) => prev.filter((_, i) => i !== index));
+        setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
+
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -106,19 +140,17 @@ const WritePage = () => {
                 throw error;
             }
 
-            // 공개 URL 가져오기
             const {
                 data: { publicUrl },
             } = supabase.storage.from('post-images').getPublicUrl(filePath);
 
-            console.log('Uploaded image URL:', publicUrl);
             uploadedUrls.push(publicUrl);
         }
 
         return uploadedUrls;
     };
 
-    // 게시글 작성
+    // 게시글 수정
     const handleSubmit = async () => {
         if (!user?.id) {
             alert('로그인이 필요합니다.');
@@ -138,30 +170,33 @@ const WritePage = () => {
         setIsUploading(true);
 
         try {
-            // 이미지 업로드
-            let imageUrls: string[] = [];
-            if (images.length > 0) {
-                imageUrls = await uploadImagesToStorage(images);
+            // 새 이미지 업로드
+            let newImageUrls: string[] = [];
+            if (newImages.length > 0) {
+                newImageUrls = await uploadImagesToStorage(newImages);
             }
 
+            // 기존 이미지 + 새 이미지 합치기
+            const finalImages = [...existingImages, ...newImageUrls];
+
             const params = {
+                id: postId,
                 title: title.trim(),
                 content: content.trim(),
                 category: category,
-                images: imageUrls.length > 0 ? imageUrls : [],
-                user_id: user.id,
+                images: finalImages.length > 0 ? finalImages : [],
             };
 
-            createPostMutation.mutate(
+            updatePostMutation.mutate(
                 { post: params },
                 {
                     onSuccess: () => {
-                        alert('게시글이 작성되었습니다!');
-                        router.push('/');
+                        alert('게시글이 수정되었습니다!');
+                        router.push(`/posts/${postId}`);
                     },
                     onError: (error) => {
-                        console.error('게시글 작성 실패:', error);
-                        alert('게시글 작성 중 오류가 발생했습니다.');
+                        console.error('게시글 수정 실패:', error);
+                        alert('게시글 수정 중 오류가 발생했습니다.');
                     },
                 },
             );
@@ -173,6 +208,14 @@ const WritePage = () => {
         }
     };
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 pt-24 pb-12 flex items-center justify-center">
+                <div className="text-gray-500">게시글을 불러오는 중...</div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 pt-24 pb-12">
             <div className="max-w-4xl mx-auto px-4">
@@ -181,7 +224,16 @@ const WritePage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-lg p-8 border border-gray-200"
                 >
-                    <h1 className="text-2xl font-bold mb-6 text-gray-900">새 게시글 작성</h1>
+                    {/* 헤더 */}
+                    <div className="flex items-center gap-3 mb-6">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-gray-600" />
+                        </button>
+                        <h1 className="text-2xl font-bold text-gray-900">게시글 수정</h1>
+                    </div>
 
                     {/* 카테고리 */}
                     <div className="mb-6">
@@ -232,36 +284,64 @@ const WritePage = () => {
                         />
                     </div>
 
-                    {/* 이미지 업로드 */}
+                    {/* 이미지 관리 */}
                     <div className="mb-6">
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             이미지 (최대 5개, 각 5MB 이하)
                         </label>
 
-                        {/* 이미지 미리보기 */}
-                        {imagePreviews.length > 0 && (
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                                {imagePreviews.map((preview, index) => (
-                                    <div key={index} className="relative group">
-                                        <img
-                                            src={preview}
-                                            alt={`preview-${index}`}
-                                            className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                                        />
-                                        <button
-                                            onClick={() => handleRemoveImage(index)}
-                                            disabled={isUploading}
-                                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))}
+                        {/* 기존 이미지 */}
+                        {existingImages.length > 0 && (
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-2">기존 이미지</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {existingImages.map((image, index) => (
+                                        <div key={`existing-${index}`} className="relative group">
+                                            <img
+                                                src={image}
+                                                alt={`existing-${index}`}
+                                                className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                                            />
+                                            <button
+                                                onClick={() => handleRemoveExistingImage(index)}
+                                                disabled={isUploading}
+                                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 새 이미지 미리보기 */}
+                        {newImagePreviews.length > 0 && (
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-2">새 이미지</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {newImagePreviews.map((preview, index) => (
+                                        <div key={`new-${index}`} className="relative group">
+                                            <img
+                                                src={preview}
+                                                alt={`preview-${index}`}
+                                                className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                                            />
+                                            <button
+                                                onClick={() => handleRemoveNewImage(index)}
+                                                disabled={isUploading}
+                                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
                         {/* 업로드 버튼 */}
-                        {images.length < 5 && (
+                        {existingImages.length + newImages.length < 5 && (
                             <>
                                 <input
                                     ref={fileInputRef}
@@ -288,7 +368,9 @@ const WritePage = () => {
                                     ) : (
                                         <>
                                             <Upload className="w-8 h-8" />
-                                            <span className="font-medium">이미지 업로드 ({images.length}/5)</span>
+                                            <span className="font-medium">
+                                                이미지 추가 ({existingImages.length + newImages.length}/5)
+                                            </span>
                                             <span className="text-xs text-gray-400">
                                                 JPG, PNG, GIF 등 (각 5MB 이하)
                                             </span>
@@ -308,7 +390,7 @@ const WritePage = () => {
                             disabled={isUploading || !title.trim() || !content.trim()}
                             className="flex-1 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isUploading ? '업로드 중...' : '게시하기'}
+                            {isUploading ? '수정 중...' : '수정 완료'}
                         </motion.button>
                         <motion.button
                             whileHover={{ scale: 1.01 }}
@@ -326,4 +408,4 @@ const WritePage = () => {
     );
 };
 
-export default WritePage;
+export default EditPage;

@@ -1,26 +1,34 @@
 'use client';
 import { WLogo } from '@/components/header/WLogo';
+import useSupabaseBrowser from '@/lib/supabase/supabase-browser';
 import { useLoginRequest } from '@/query/auth';
+import { useAuthStore } from '@/store/useAuthStore';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const LoginPage = ({ setIsLoggedIn }: { setIsLoggedIn: (val: boolean) => void }) => {
+const LoginPage = () => {
     const router = useRouter();
+    const supabase = useSupabaseBrowser();
+    const { setUser } = useAuthStore();
     const loginMutation = useLoginRequest();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleLogin = () => {
         try {
-            console.log(email);
-            console.log(password);
             loginMutation.mutate(
                 { email: email, password: password },
                 {
-                    onSuccess: () => {
-                        // setIsLoggedIn(true);
+                    onSuccess: async (data) => {
+                        await supabase.auth.setSession({
+                            access_token: data.session.access_token,
+                            refresh_token: data.session.refresh_token,
+                        });
                         router.push('/');
+                    },
+                    onError: (error) => {
+                        console.log(`로그인 중 에러가 발생했습니다.: ${error}`);
                     },
                 },
             );
@@ -77,7 +85,7 @@ const LoginPage = ({ setIsLoggedIn }: { setIsLoggedIn: (val: boolean) => void })
                     <p className="text-center text-gray-600 text-sm mt-4">
                         계정이 없으신가요?{' '}
                         <button
-                            onClick={() => router.push('/signup')}
+                            onClick={() => router.push('/auth/login')}
                             className="text-blue-500 font-semibold hover:underline"
                         >
                             회원가입

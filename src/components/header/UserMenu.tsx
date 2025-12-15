@@ -1,19 +1,24 @@
+import useSupabaseBrowser from '@/lib/supabase/supabase-browser';
+import { useAuthStore } from '@/store/useAuthStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export const UserMenu = ({
-    isLoggedIn,
-    setIsLoggedIn,
-}: {
-    isLoggedIn: boolean;
-    setIsLoggedIn: (isLoggedIn: boolean) => void;
-}) => {
+export const UserMenu = () => {
     const router = useRouter();
+    const supabase = useSupabaseBrowser();
+    const { user } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
-    if (!isLoggedIn) {
+    const handleLogout = () => {
+        router.push('/');
+        setDropdownOpen(false);
+
+        supabase.auth.signOut({ scope: 'local' });
+    };
+
+    if (!user) {
         return (
             <div className="flex items-center gap-2">
                 <motion.button
@@ -81,11 +86,7 @@ export const UserMenu = ({
                         </button>
                         <div className="border-t border-gray-200" />
                         <button
-                            onClick={() => {
-                                setIsLoggedIn(false);
-                                router.push('/');
-                                setDropdownOpen(false);
-                            }}
+                            onClick={handleLogout}
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors text-gray-700"
                         >
                             <LogOut className="w-5 h-5" />
