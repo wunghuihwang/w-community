@@ -1,7 +1,7 @@
 'use client';
 
 import { PostDetailActions } from '@/components/PostDetailsActions';
-import { useSelectPost } from '@/query/posts';
+import { useCommentList, useSelectPost } from '@/query/posts';
 import { usePostsStore } from '@/store/usePostsStore';
 import { getRelativeTime } from '@/utills/common.utill';
 import { motion } from 'framer-motion';
@@ -10,12 +10,13 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const DetailPage = () => {
-    const { selectedPost, setSelectedPost } = usePostsStore();
+    const { selectedPost, setSelectedPost, commentList, setCommentList } = usePostsStore();
     const params = useParams();
     const [postId, setPostId] = useState<string>('');
     const [comment, setComment] = useState('');
     const [liked, setLiked] = useState(false);
     const { data: postData, isSuccess } = useSelectPost(postId);
+    const { data: commentData, isSuccess: commentDataIsSuccess } = useCommentList(postId);
 
     useEffect(() => {
         if (params.id) {
@@ -24,10 +25,17 @@ const DetailPage = () => {
     }, [params.id]);
 
     useEffect(() => {
-        if (postData) {
+        if (postData && isSuccess) {
             setSelectedPost(postData);
         }
-    }, [postData, setSelectedPost]);
+    }, [postId, postData, isSuccess]);
+
+    useEffect(() => {
+        if (commentData && commentDataIsSuccess) {
+            console.log(commentData);
+            setCommentList(commentData);
+        }
+    }, [postId, commentData, commentDataIsSuccess]);
 
     const mockComments = [
         { id: 1, author: 'UserA', content: '정말 유익한 정보네요! 감사합니다.', time: '1시간 전', avatar: null },
@@ -169,7 +177,7 @@ const DetailPage = () => {
                                     onChange={(e) => setComment(e.target.value)}
                                     placeholder="댓글을 입력하세요..."
                                     rows={3}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                                 />
                                 <div className="mt-2 flex justify-end">
                                     <motion.button
@@ -192,17 +200,21 @@ const DetailPage = () => {
 
                     {/* 댓글 리스트 */}
                     <div className="space-y-4">
-                        {mockComments.length > 0 ? (
-                            mockComments.map((c) => (
+                        {commentList && commentList.length > 0 ? (
+                            commentList.map((c) => (
                                 <div
                                     key={c.id}
                                     className="flex gap-3 p-4 hover:bg-gray-50 rounded-lg transition-colors"
                                 >
-                                    {renderAvatar(c.author, c.avatar, 'small')}
+                                    {renderAvatar(c?.profiles.username, c?.profiles.avatar_url, 'small')}
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-semibold text-gray-900">{c.author}</span>
-                                            <span className="text-sm text-gray-500">{c.time}</span>
+                                            <span className="font-semibold text-gray-900">
+                                                {/* {c.profiles[0].username} */}
+                                            </span>
+                                            <span className="text-sm text-gray-500">
+                                                {getRelativeTime(c.created_at)}
+                                            </span>
                                         </div>
                                         <p className="text-gray-700">{c.content}</p>
                                     </div>

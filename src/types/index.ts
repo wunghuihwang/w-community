@@ -25,15 +25,13 @@ export interface PostFilter {
 }
 
 export interface Comment {
-    id: string;
-    post_id: string;
-    user_id: string;
     content: string;
     created_at: string;
-    profiles: {
-        username: string;
-        avatar_url: string;
-    };
+    id: string;
+    post_id: string;
+    profiles: PostProfile;
+    updated_at: string | null;
+    user_id: string;
 }
 
 export interface Profile {

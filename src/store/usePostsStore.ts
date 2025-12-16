@@ -1,5 +1,5 @@
 // src/store/usePostsStore.ts
-import { Post, PostFilter } from '@/types';
+import { Comment, Post, PostFilter } from '@/types';
 import { create } from 'zustand';
 
 // 초기 데이터
@@ -25,9 +25,11 @@ interface PostsState {
     filterParams: PostFilter;
     post: Post[];
     selectedPost: Post;
+    commentList: Comment[] | null;
+    setFilterParams: (filterParams: PostFilter) => void;
     setPost: (post: Post[]) => void;
     setSelectedPost: (post: Post) => void;
-    setFilterParams: (filterParams: PostFilter) => void;
+    setCommentList: (commentList: Comment[]) => void;
 }
 
 export const usePostsStore = create<PostsState>((set) => ({
@@ -38,7 +40,9 @@ export const usePostsStore = create<PostsState>((set) => ({
         limit: 5,
         category: 'all',
     },
+    commentList: null,
     setPost: (post) => set({ post }),
     setSelectedPost: (selectedPost) => set({ selectedPost }),
     setFilterParams: (filterParams) => set({ filterParams }),
+    setCommentList: (commentList) => set({ commentList }),
 }));

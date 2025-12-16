@@ -124,3 +124,42 @@ export const deletePost = async (id: string) => {
 
     if (error) throw error;
 };
+
+export const getComments = async (postId: string) => {
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    const { data, error } = await supabase
+        .from('comments')
+        .select(
+            `
+        id,
+        post_id,
+        user_id,
+        content,
+        created_at,
+        updated_at,
+        profiles (
+            username,
+            avatar_url
+        )
+    `,
+        )
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    // 배열을 단일 객체로 변환
+    const transformedData = data?.map((comment) => ({
+        ...comment,
+        profiles:
+            Array.isArray(comment.profiles) && comment.profiles.length > 0
+                ? comment.profiles[0]
+                : { username: 'Unknown', avatar_url: null },
+    }));
+
+    return transformedData;
+};

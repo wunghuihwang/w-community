@@ -13,8 +13,7 @@ import { WLogo } from '../header/WLogo';
 
 export const Header = () => {
     const router = useRouter();
-    const { user } = useAuthStore();
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const { user, loading } = useAuthStore();
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
 
@@ -36,7 +35,8 @@ export const Header = () => {
 
                 {/* 데스크톱 네비게이션 */}
                 <div className="hidden md:flex items-center gap-4">
-                    {user && (
+                    {/* loading이 끝나고 user가 있을 때만 표시 */}
+                    {!loading && user && (
                         <>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
@@ -56,7 +56,6 @@ export const Header = () => {
                                     <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
                                 </button>
 
-                                {/* 알림 드롭다운 */}
                                 <AnimatePresence>
                                     {notificationOpen && (
                                         <NotificationDropdown
@@ -68,7 +67,16 @@ export const Header = () => {
                             </div>
                         </>
                     )}
-                    <UserMenu />
+                    {/* loading이 끝난 후에만 UserMenu 표시 */}
+                    {!loading && <UserMenu />}
+
+                    {/* 선택사항: 로딩 중일 때 스켈레톤 표시 */}
+                    {loading && (
+                        <div className="flex items-center gap-4">
+                            <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse" />
+                            <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse" />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex md:hidden items-center gap-2">

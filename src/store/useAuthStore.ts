@@ -1,18 +1,17 @@
+// store/useAuthStore.ts 예시
 import { User } from '@supabase/supabase-js';
 import { create } from 'zustand';
 
 interface AuthState {
     user: User | null;
-    isLoading: boolean;
+    loading: boolean;
     setUser: (user: User | null) => void;
-    setLoading: (isLoading: boolean) => void;
-    logout: () => void;
+    setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
-    isLoading: true,
-    setUser: (user) => set({ user, isLoading: false }),
-    setLoading: (isLoading) => set({ isLoading }),
-    logout: () => set({ user: null }),
+    loading: true,
+    setUser: (user) => set({ user }),
+    setLoading: (loading) => set({ loading }),
 }));

@@ -16,10 +16,10 @@ export async function middleware(request: NextRequest) {
                     return request.cookies.getAll();
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-                    supabaseResponse = NextResponse.next({
-                        request,
-                    });
+                    // 1. request 쿠키 업데이트 (제거 - 필요없음)
+                    // cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+
+                    // 2. response 쿠키 설정
                     cookiesToSet.forEach(({ name, value, options }) =>
                         supabaseResponse.cookies.set(name, value, options),
                     );
@@ -28,16 +28,13 @@ export async function middleware(request: NextRequest) {
         },
     );
 
-    // 세션 갱신 및 가져오기
     const {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // 보호된 라우트 체크
     const protectedPaths = ['/profile'];
     const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
-    // 로그인이 필요한 페이지인데 사용자가 없으면 로그인 페이지로 리디렉션
     if (isProtectedPath && !user) {
         const redirectUrl = request.nextUrl.clone();
         redirectUrl.pathname = '/auth/login';
@@ -45,7 +42,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
     }
 
-    // 이미 로그인한 사용자가 로그인/회원가입 페이지 접근 시 대시보드로 리디렉션
     if ((request.nextUrl.pathname === '/auth/login' || request.nextUrl.pathname === '/auth/signup') && user) {
         return NextResponse.redirect(new URL('/', request.url));
     }

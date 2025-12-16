@@ -1,4 +1,12 @@
-import { createPost, deletePost, getPostById, getPosts, getTrendingPosts, updatePost } from '@/lib/supabase/posts';
+import {
+    createPost,
+    deletePost,
+    getComments,
+    getPostById,
+    getPosts,
+    getTrendingPosts,
+    updatePost,
+} from '@/lib/supabase/posts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // export const usePostList = ({ page, limit, category }: { page: number; limit: number; category: string }) => {
@@ -95,5 +103,13 @@ export const useDeletePost = () => {
             // 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
+    });
+};
+
+export const useCommentList = (postId: string) => {
+    return useQuery({
+        queryKey: ['posts', 'comments'],
+        queryFn: () => getComments(postId),
+        enabled: !!postId,
     });
 };
