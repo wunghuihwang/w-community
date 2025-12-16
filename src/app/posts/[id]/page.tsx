@@ -1,22 +1,33 @@
 'use client';
 
 import { PostDetailActions } from '@/components/PostDetailsActions';
-import { useCommentList, useSelectPost } from '@/query/posts';
+import { useCommentList, useDeleteComment, usePostComment, useSelectPost, useUpdateComment } from '@/query/posts';
+import { useAuthStore } from '@/store/useAuthStore';
 import { usePostsStore } from '@/store/usePostsStore';
 import { getRelativeTime } from '@/utills/common.utill';
-import { motion } from 'framer-motion';
-import { Bookmark, Heart, MessageCircle } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bookmark, Check, Heart, MessageCircle, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const DetailPage = () => {
-    const { selectedPost, setSelectedPost, commentList, setCommentList } = usePostsStore();
+    const { selectedPost, setSelectedPost } = usePostsStore();
+    const { user } = useAuthStore();
     const params = useParams();
     const [postId, setPostId] = useState<string>('');
     const [comment, setComment] = useState('');
     const [liked, setLiked] = useState(false);
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
     const { data: postData, isSuccess } = useSelectPost(postId);
-    const { data: commentData, isSuccess: commentDataIsSuccess } = useCommentList(postId);
+    const { data: commentData } = useCommentList(postId);
+    const commentMutation = usePostComment();
+    const deleteCommentMutation = useDeleteComment();
+    const updateCommentMutation = useUpdateComment();
+
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (params.id) {
@@ -30,19 +41,18 @@ const DetailPage = () => {
         }
     }, [postId, postData, isSuccess]);
 
+    // 메뉴 외부 클릭 감지
     useEffect(() => {
-        if (commentData && commentDataIsSuccess) {
-            console.log(commentData);
-            setCommentList(commentData);
-        }
-    }, [postId, commentData, commentDataIsSuccess]);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setOpenMenuId(null);
+            }
+        };
 
-    const mockComments = [
-        { id: 1, author: 'UserA', content: '정말 유익한 정보네요! 감사합니다.', time: '1시간 전', avatar: null },
-        { id: 2, author: 'UserB', content: '저도 이 방법으로 해봐야겠어요', time: '2시간 전', avatar: null },
-    ];
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-    // 아바타 렌더링 함수
     const renderAvatar = (username: string, avatarUrl: string | null, size: 'small' | 'medium' = 'medium') => {
         const sizeClasses = size === 'small' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base';
 
@@ -69,6 +79,69 @@ const DetailPage = () => {
                 {firstChar}
             </div>
         );
+    };
+
+    const handleCommentPush = () => {
+        if (!comment.trim()) return;
+
+        commentMutation.mutate(
+            { content: comment.trim(), post_id: postId },
+            {
+                onSuccess: () => {
+                    setComment('');
+                },
+                onError: (error) => {
+                    console.error('댓글 작성 실패:', error);
+                    alert(error instanceof Error ? error.message : '댓글 작성에 실패했습니다.');
+                },
+            },
+        );
+    };
+
+    const handleEditStart = (commentId: string, currentContent: string) => {
+        setEditingCommentId(commentId);
+        setEditContent(currentContent);
+        setOpenMenuId(null);
+    };
+
+    const handleEditCancel = () => {
+        setEditingCommentId(null);
+        setEditContent('');
+    };
+
+    const handleEditSave = async (commentId: string) => {
+        if (!editContent.trim()) return;
+        if (!confirm('정말 이 댓글을 수정하시겠습니까?')) return;
+
+        // 임시: 성공했다고 가정
+        updateCommentMutation.mutate(
+            { content: editContent, id: commentId },
+            {
+                onSuccess: () => {
+                    alert('댓글이 수정되었습니다.');
+                    setEditingCommentId(null);
+                    setEditContent('');
+                },
+                onError: (error) => {
+                    console.error('댓글 수정 실패:', error);
+                    alert(error instanceof Error ? error.message : '댓글 수정에 실패했습니다.');
+                },
+            },
+        );
+    };
+
+    const handleDelete = async (commentId: string) => {
+        if (!confirm('정말 이 댓글을 삭제하시겠습니까?')) return;
+
+        deleteCommentMutation.mutate(commentId, {
+            onSuccess: () => {
+                alert('댓글이 삭제되었습니다.');
+            },
+            onError: (error) => {
+                console.error('댓글 삭제 실패:', error);
+                alert(error instanceof Error ? error.message : '댓글 삭제에 실패했습니다.');
+            },
+        });
     };
 
     if (!selectedPost) {
@@ -164,61 +237,141 @@ const DetailPage = () => {
                     transition={{ delay: 0.1 }}
                     className="bg-white rounded-lg p-8 border border-gray-200"
                 >
-                    <h2 className="text-xl font-bold mb-6 text-gray-900">댓글 {mockComments.length}</h2>
+                    <h2 className="text-xl font-bold mb-6 text-gray-900">댓글 {commentData?.length ?? 0}</h2>
 
                     {/* 댓글 입력 */}
-                    <div className="mb-6">
-                        <div className="flex gap-3">
-                            {/* 현재 사용자 아바타 - 실제로는 현재 로그인한 사용자 정보 사용 */}
-                            {renderAvatar('Me', null, 'small')}
-                            <div className="flex-1">
-                                <textarea
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    placeholder="댓글을 입력하세요..."
-                                    rows={3}
-                                    className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                                />
-                                <div className="mt-2 flex justify-end">
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        disabled={!comment.trim()}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        onClick={() => {
-                                            // TODO: 댓글 작성 로직
-                                            console.log('댓글 작성:', comment);
-                                            setComment('');
-                                        }}
-                                    >
-                                        댓글 작성
-                                    </motion.button>
+                    {user && (
+                        <div className="mb-6">
+                            <div className="flex gap-3">
+                                {renderAvatar(user.email || 'User', null, 'small')}
+                                <div className="flex-1">
+                                    <textarea
+                                        value={comment}
+                                        onChange={(e) => setComment(e.target.value)}
+                                        placeholder="댓글을 입력하세요..."
+                                        rows={3}
+                                        maxLength={1000}
+                                        className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                    />
+                                    <div className="mt-2 flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">{comment.length}/1000</span>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            disabled={!comment.trim() || commentMutation.isPending}
+                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            onClick={handleCommentPush}
+                                        >
+                                            {commentMutation.isPending ? '작성 중...' : '댓글 작성'}
+                                        </motion.button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* 댓글 리스트 */}
                     <div className="space-y-4">
-                        {commentList && commentList.length > 0 ? (
-                            commentList.map((c) => (
-                                <div
+                        {commentData && commentData.length > 0 ? (
+                            commentData.map((c) => (
+                                <motion.div
                                     key={c.id}
-                                    className="flex gap-3 p-4 hover:bg-gray-50 rounded-lg transition-colors"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="flex gap-3 p-4 hover:bg-gray-50 rounded-lg transition-colors group"
                                 >
-                                    {renderAvatar(c?.profiles.username, c?.profiles.avatar_url, 'small')}
+                                    {renderAvatar(c.profiles.username, c.profiles.avatar_url, 'small')}
+
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-semibold text-gray-900">
-                                                {/* {c.profiles[0].username} */}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                                {getRelativeTime(c.created_at)}
-                                            </span>
+                                        <div className="flex items-start justify-between mb-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-gray-900">
+                                                    {c.profiles.username}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                    {getRelativeTime(c.created_at)}
+                                                </span>
+                                            </div>
+
+                                            {/* 수정/삭제 메뉴 (본인 댓글만) */}
+                                            {user && user.id === c.user_id && (
+                                                <div className="relative" ref={menuRef}>
+                                                    <button
+                                                        onClick={() => setOpenMenuId(openMenuId === c.id ? null : c.id)}
+                                                        className="p-1 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                                                    </button>
+
+                                                    <AnimatePresence>
+                                                        {openMenuId === c.id && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                                animate={{ opacity: 1, scale: 1 }}
+                                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                                transition={{ duration: 0.1 }}
+                                                                className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10"
+                                                            >
+                                                                <button
+                                                                    onClick={() => handleEditStart(c.id, c.content)}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                                                >
+                                                                    <Pencil className="w-4 h-4" />
+                                                                    수정
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDelete(c.id)}
+                                                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                    삭제
+                                                                </button>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
                                         </div>
-                                        <p className="text-gray-700">{c.content}</p>
+
+                                        {/* 댓글 내용 or 수정 폼 */}
+                                        {editingCommentId === c.id ? (
+                                            <div className="mt-2">
+                                                <textarea
+                                                    value={editContent}
+                                                    onChange={(e) => setEditContent(e.target.value)}
+                                                    rows={3}
+                                                    maxLength={1000}
+                                                    className="w-full px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                                    autoFocus
+                                                />
+                                                <div className="mt-2 flex justify-between items-center">
+                                                    <span className="text-sm text-gray-500">
+                                                        {editContent.length}/1000
+                                                    </span>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={handleEditCancel}
+                                                            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                            취소
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleEditSave(c.id)}
+                                                            disabled={!editContent.trim()}
+                                                            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                            저장
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-700 whitespace-pre-wrap">{c.content}</p>
+                                        )}
                                     </div>
-                                </div>
+                                </motion.div>
                             ))
                         ) : (
                             <div className="text-center py-8 text-gray-500">첫 댓글을 작성해보세요!</div>

@@ -1,12 +1,16 @@
 import {
+    createComment,
     createPost,
+    deleteComment,
     deletePost,
     getComments,
     getPostById,
     getPosts,
     getTrendingPosts,
+    updateComment,
     updatePost,
 } from '@/lib/supabase/posts';
+import { CommentPayload, UpdateCommentPayload } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // export const usePostList = ({ page, limit, category }: { page: number; limit: number; category: string }) => {
@@ -108,8 +112,41 @@ export const useDeletePost = () => {
 
 export const useCommentList = (postId: string) => {
     return useQuery({
-        queryKey: ['posts', 'comments'],
+        queryKey: ['comments'],
         queryFn: () => getComments(postId),
         enabled: !!postId,
+    });
+};
+
+export const usePostComment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ content, post_id }: CommentPayload) => createComment({ content, post_id }),
+        onSuccess: () => {
+            // 캐시 무효화
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+        },
+    });
+};
+
+export const useUpdateComment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id: commentId, content }: UpdateCommentPayload) =>
+            updateComment({ id: commentId, content }),
+        onSuccess: () => {
+            // 캐시 무효화
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+        },
+    });
+};
+export const useDeleteComment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (commentId: string) => deleteComment(commentId),
+        onSuccess: () => {
+            // 캐시 무효화
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+        },
     });
 };

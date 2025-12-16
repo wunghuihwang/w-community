@@ -33,6 +33,8 @@ export interface Comment {
     updated_at: string | null;
     user_id: string;
 }
+export type CommentPayload = Pick<Comment, 'content' | 'post_id'>;
+export type UpdateCommentPayload = Pick<Comment, 'id' | 'content'>;
 
 export interface Profile {
     id: string;
