@@ -187,6 +187,7 @@ const EditPage = () => {
                 images: finalImages.length > 0 ? finalImages : [],
             };
 
+            console.log(params);
             updatePostMutation.mutate(
                 { post: params },
                 {

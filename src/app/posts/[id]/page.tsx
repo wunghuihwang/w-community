@@ -11,7 +11,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const DetailPage = () => {
-    const { selectedPost, setSelectedPost } = usePostsStore();
+    const { selectedPost, setSelectedPost, commentList, setCommentList } = usePostsStore();
     const { user } = useAuthStore();
     const params = useParams();
     const [postId, setPostId] = useState<string>('');
@@ -22,7 +22,7 @@ const DetailPage = () => {
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     const { data: postData, isSuccess } = useSelectPost(postId);
-    const { data: commentData } = useCommentList(postId);
+    const { data: commentData, isSuccess: isSuccesscommentData } = useCommentList(postId);
     const commentMutation = usePostComment();
     const deleteCommentMutation = useDeleteComment();
     const updateCommentMutation = useUpdateComment();
@@ -40,6 +40,12 @@ const DetailPage = () => {
             setSelectedPost(postData);
         }
     }, [postId, postData, isSuccess]);
+
+    useEffect(() => {
+        if (commentData && isSuccesscommentData) {
+            setCommentList(commentData);
+        }
+    }, [postId, commentData, isSuccesscommentData]);
 
     // 메뉴 외부 클릭 감지
     useEffect(() => {
@@ -272,8 +278,8 @@ const DetailPage = () => {
 
                     {/* 댓글 리스트 */}
                     <div className="space-y-4">
-                        {commentData && commentData.length > 0 ? (
-                            commentData.map((c) => (
+                        {commentList && commentList.length > 0 ? (
+                            commentList.map((c) => (
                                 <motion.div
                                     key={c.id}
                                     initial={{ opacity: 0, y: 10 }}

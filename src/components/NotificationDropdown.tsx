@@ -1,10 +1,15 @@
+import { useNotiList } from '@/query/common';
+import { useAuthStore } from '@/store/useAuthStore';
 import { motion } from 'framer-motion';
 import { Bell, Heart, MessageCircle, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const router = useRouter();
+    const [userId, setUserId] = useState('');
+    const { user } = useAuthStore();
+    const { data } = useNotiList(userId);
     const [notifications, setNotifications] = useState([
         {
             id: 1,
@@ -43,6 +48,12 @@ export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onC
         },
     ]);
 
+    useEffect(() => {
+        if (!user) return;
+
+        setUserId(user.id);
+    }, [user]);
+
     const unreadCount = notifications.filter((n) => !n.read).length;
 
     const markAsRead = (id: number) => {
@@ -80,13 +91,14 @@ export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onC
 
                 {/* 알림 리스트 */}
                 <div className="max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
+                    {data?.length === 0 ? (
                         <div className="p-8 text-center text-gray-500">
                             <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                             <p>새로운 알림이 없습니다</p>
                         </div>
                     ) : (
-                        notifications.map((notif) => (
+                        data &&
+                        data.map((notif) => (
                             <motion.div
                                 key={notif.id}
                                 initial={{ opacity: 0 }}
@@ -94,7 +106,10 @@ export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onC
                                 className={`p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer ${
                                     !notif.read ? 'bg-blue-50' : ''
                                 }`}
-                                onClick={() => markAsRead(notif.id)}
+                                onClick={() => {
+                                    markAsRead(notif.id);
+                                    router.push(`/posts/${notif.post_id}`);
+                                }}
                             >
                                 <div className="flex items-start gap-3">
                                     <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center shrink-0">

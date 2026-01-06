@@ -1,7 +1,10 @@
 import {
+    checkIfLiked,
     createComment,
+    createLike,
     createPost,
     deleteComment,
+    deleteLike,
     deletePost,
     getComments,
     getPostById,
@@ -112,7 +115,7 @@ export const useDeletePost = () => {
 
 export const useCommentList = (postId: string) => {
     return useQuery({
-        queryKey: ['comments'],
+        queryKey: ['comments', postId],
         queryFn: () => getComments(postId),
         enabled: !!postId,
     });
@@ -124,6 +127,7 @@ export const usePostComment = () => {
         mutationFn: async ({ content, post_id }: CommentPayload) => createComment({ content, post_id }),
         onSuccess: () => {
             // 캐시 무효화
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['comments'] });
         },
     });
@@ -146,7 +150,20 @@ export const useDeleteComment = () => {
         mutationFn: async (commentId: string) => deleteComment(commentId),
         onSuccess: () => {
             // 캐시 무효화
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['comments'] });
         },
     });
+};
+
+export const useToggleLike = async (post_id: string) => {
+    const isLiked = await checkIfLiked(post_id);
+
+    if (isLiked) {
+        await deleteLike(post_id);
+        return { action: 'unliked', isLiked: false };
+    } else {
+        await createLike(post_id);
+        return { action: 'liked', isLiked: true };
+    }
 };

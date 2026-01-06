@@ -1,37 +1,21 @@
 'use client';
+import { useTrendingPost } from '@/query/posts';
 import { useTrendingStore } from '@/store/useTrendingStore';
 import { motion } from 'framer-motion';
 import { Eye, Flame, Heart, MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const TrendingPage = () => {
     const router = useRouter();
-    const { setSelectedPost } = useTrendingStore();
-    const trendingPosts = [
-        {
-            id: 1,
-            author: 'TechGuru',
-            time: '1일 전',
-            title: '🔥 이번 주 가장 핫한 개발 트렌드',
-            content: 'AI, Web3, 클라우드 네이티브... 2024년 개발자라면 꼭 알아야 할 키워드들!',
-            image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
-            likes: 1248,
-            comments: 156,
-            views: 5432,
-            trending: true,
-        },
-        {
-            id: 2,
-            author: 'StartupCEO',
-            time: '2일 전',
-            title: '스타트업 개발자가 알아야 할 5가지',
-            content: '빠르게 성장하는 스타트업 환경에서 살아남는 법',
-            likes: 892,
-            comments: 98,
-            views: 3210,
-            trending: true,
-        },
-    ];
+    const { post, setPost } = useTrendingStore();
+    const { data: trendingPosts, isSuccess: isTrendingSuccess } = useTrendingPost();
+
+    useEffect(() => {
+        if (trendingPosts && isTrendingSuccess) {
+            setPost(trendingPosts);
+        }
+    }, [trendingPosts, isTrendingSuccess]);
 
     return (
         <div className="min-h-screen bg-gray-50 pt-24 pb-12">
@@ -45,7 +29,7 @@ const TrendingPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                    {trendingPosts.map((post, index) => (
+                    {post.map((post, index) => (
                         <motion.div
                             key={post.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -53,7 +37,6 @@ const TrendingPage = () => {
                             transition={{ delay: index * 0.1 }}
                             className="bg-white rounded-lg p-6 border-2 border-orange-200 hover:border-orange-400 transition-all cursor-pointer"
                             onClick={() => {
-                                setSelectedPost(post);
                                 router.push(`/trending/${post.id}`);
                             }}
                         >
@@ -62,22 +45,28 @@ const TrendingPage = () => {
                                 <div className="flex-1">
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">{post.title}</h3>
                                     <p className="text-gray-600 mb-4">{post.content}</p>
-                                    {post.image && (
-                                        <img
-                                            src={post.image}
-                                            alt=""
-                                            className="w-full h-48 object-cover rounded-lg mb-4"
-                                        />
+                                    {post.images && post.images.length > 0 && post.images[0] && (
+                                        <div className="mb-4 rounded-lg overflow-hidden border border-gray-200">
+                                            <img
+                                                src={post.images[0]}
+                                                alt={post.title}
+                                                className="w-full h-48 object-cover"
+                                                onError={(e) => {
+                                                    // 이미지 로드 실패시 숨김
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
                                     )}
                                     <div className="flex items-center gap-6 text-gray-500">
                                         <span className="flex items-center gap-1 font-semibold text-red-500">
-                                            <Heart className="w-5 h-5" /> {post.likes}
+                                            <Heart className="w-5 h-5" /> {post.like_count}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <MessageCircle className="w-5 h-5" /> {post.comments}
+                                            <MessageCircle className="w-5 h-5" /> {post.comment_count}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <Eye className="w-5 h-5" /> {post.views}
+                                            <Eye className="w-5 h-5" /> {post.view_count}
                                         </span>
                                     </div>
                                 </div>

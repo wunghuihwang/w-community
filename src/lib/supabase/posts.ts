@@ -99,6 +99,13 @@ export const updatePost = async ({
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error('로그인이 필요합니다.');
+    }
 
     const { data, error } = await supabase
         .from('posts')
@@ -106,22 +113,30 @@ export const updatePost = async ({
             title,
             content,
             images,
-            updated_at: new Date().toISOString(),
             category,
         })
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
     if (error) throw error;
     return data;
 };
+
 export const deletePost = async (id: string) => {
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
-    const { error } = await supabase.from('posts').delete().eq('id', id);
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error('로그인이 필요합니다.');
+    }
+    const { error } = await supabase.from('posts').delete().eq('id', id).eq('user_id', user.id);
 
     if (error) throw error;
 };
@@ -229,5 +244,68 @@ export const deleteComment = async (commentId: string) => {
     }
 
     const { error } = await supabase.from('comments').delete().eq('id', commentId).eq('user_id', user.id);
+    if (error) throw error;
+};
+
+export const checkIfLiked = async (post_id: string): Promise<boolean> => {
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    // 로그인 안 했으면 false
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('post_id', post_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    if (error) throw error;
+    return !!data;
+};
+
+export const createLike = async (post_id: string) => {
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error('로그인이 필요합니다.');
+    }
+
+    const { data, error } = await supabase.from('likes').insert([
+        {
+            post_id: post_id,
+            user_id: user.id,
+        },
+    ]);
+    if (error) throw error;
+
+    return data;
+};
+
+export const deleteLike = async (post_id: string) => {
+    const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error('로그인이 필요합니다.');
+    }
+
+    const { error } = await supabase.from('likes').delete().eq('post_id', post_id).eq('user_id', user.id);
     if (error) throw error;
 };
