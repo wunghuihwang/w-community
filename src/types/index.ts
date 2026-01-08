@@ -8,6 +8,7 @@ export interface Post {
     user_id: string;
     title: string;
     content: string;
+    isLiked: boolean | null;
     category: string | null;
     images: string[] | null;
     like_count: number | null;

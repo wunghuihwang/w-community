@@ -4,8 +4,6 @@ import { motion } from 'framer-motion';
 import { Eye, Heart, MessageCircle } from 'lucide-react';
 
 export const PostCard = ({ post, onClick }: { post: Post; onClick: () => void }) => {
-    // 디버깅용
-
     // 아바타 렌더링 함수
     const renderAvatar = () => {
         if (post.profiles.avatar_url) {
@@ -78,11 +76,13 @@ export const PostCard = ({ post, onClick }: { post: Post; onClick: () => void })
                     {/* 메타 정보 */}
                     <div className="flex items-center gap-6 text-gray-500">
                         <motion.div
-                            className="flex items-center gap-2 hover:text-red-500 transition-colors"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                post.isLiked ? 'text-red-500' : ' text-gray-600 hover:bg-gray-200'
+                            }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            <Heart className="w-5 h-5" />
+                            <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} />
                             <span className="text-sm font-medium">{post.like_count ?? 0}</span>
                         </motion.div>
 

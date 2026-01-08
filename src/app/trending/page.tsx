@@ -60,7 +60,8 @@ const TrendingPage = () => {
                                     )}
                                     <div className="flex items-center gap-6 text-gray-500">
                                         <span className="flex items-center gap-1 font-semibold text-red-500">
-                                            <Heart className="w-5 h-5" /> {post.like_count}
+                                            <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} />{' '}
+                                            {post.like_count}
                                         </span>
                                         <span className="flex items-center gap-1">
                                             <MessageCircle className="w-5 h-5" /> {post.comment_count}

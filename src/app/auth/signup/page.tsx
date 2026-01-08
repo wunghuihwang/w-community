@@ -1,90 +1,217 @@
+// app/(auth)/signup/page.tsx
 'use client';
-import { WLogo } from '@/components/header/WLogo';
-import { motion } from 'framer-motion';
+
+import { useSingUpRequest } from '@/query/auth';
+import { validateEmail, validatePassword, validateUsername } from '@/utills/common.utill';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const SignupPage = () => {
+export default function SignUpPage() {
     const router = useRouter();
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [username, setUsername] = useState('');
+    const signupMutaion = useSingUpRequest();
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        username: '',
+    });
+    const [errors, setErrors] = useState({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        username: '',
+    });
+    const [passwordStrength, setPasswordStrength] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSignup = () => {
-        alert('회원가입이 완료되었습니다!');
-        router.push('/auth/login');
+    // 실시간 이메일 검사
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const email = e.target.value;
+        setFormData({ ...formData, email });
+
+        const validation = validateEmail(email);
+        setErrors({ ...errors, email: validation.error || '' });
+    };
+
+    // 실시간 사용자명 검사
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const username = e.target.value;
+        setFormData({ ...formData, username });
+
+        const validation = validateUsername(username);
+        setErrors({ ...errors, username: validation.error || '' });
+    };
+
+    // 실시간 비밀번호 검사
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const password = e.target.value;
+        setFormData({ ...formData, password });
+
+        const validation = validatePassword(password);
+        setErrors({ ...errors, password: validation.error || '' });
+        setPasswordStrength(validation.strength || '');
+    };
+
+    // 비밀번호 확인 검사
+    const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const confirmPassword = e.target.value;
+        setFormData({ ...formData, confirmPassword });
+
+        if (confirmPassword && confirmPassword !== formData.password) {
+            setErrors({ ...errors, confirmPassword: '비밀번호가 일치하지 않습니다.' });
+        } else {
+            setErrors({ ...errors, confirmPassword: '' });
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        const emailValidation = validateEmail(formData.email);
+        const usernameValidation = validateUsername(formData.username);
+        const passwordValidation = validatePassword(formData.password);
+
+        if (!emailValidation.isValid || !usernameValidation.isValid || !passwordValidation.isValid) {
+            setErrors({
+                email: emailValidation.error || '',
+                username: usernameValidation.error || '',
+                password: passwordValidation.error || '',
+                confirmPassword: '',
+            });
+            setLoading(false);
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            setErrors({ ...errors, confirmPassword: '비밀번호가 일치하지 않습니다.' });
+            setLoading(false);
+            return;
+        }
+
+        // 회원가입
+        signupMutaion.mutate(
+            {
+                email: formData.email,
+                password: formData.password,
+                username: formData.username,
+            },
+            {
+                onSuccess: () => {
+                    alert('회원가입 성공! 이메일을 확인해주세요.');
+                    router.push('/');
+                    setLoading(false);
+                },
+                onError: (err) => {
+                    alert(err.message || '회원가입에 실패했습니다.');
+                },
+            },
+        );
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-lg p-8 border border-gray-200 w-full max-w-md"
-            >
-                <div className="flex flex-col items-center mb-8">
-                    <WLogo size="lg" />
-                    <h1 className="text-2xl font-bold mt-4 mb-2 text-gray-900">회원가입</h1>
-                    <p className="text-gray-600">새로운 계정을 만들어보세요</p>
-                </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
+                <h2 className="text-2xl text-gray-900 font-bold text-center mb-6">회원가입</h2>
 
-                <div className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* 사용자명 */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">사용자명</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-900">사용자명</label>
                         <input
                             type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="username"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            value={formData.username}
+                            onChange={handleUsernameChange}
+                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 border-gray-300 ${
+                                errors.username ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                            }`}
+                            placeholder="홍길동"
                         />
+                        {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
                     </div>
 
+                    {/* 이메일 */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">이메일</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-900">이메일</label>
                         <input
                             type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="your@email.com"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            value={formData.email}
+                            onChange={handleEmailChange}
+                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 border-gray-300 ${
+                                errors.email ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                            }`}
+                            placeholder="example@email.com"
                         />
+                        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                     </div>
 
+                    {/* 비밀번호 */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">비밀번호</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-900">비밀번호</label>
                         <input
                             type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            value={formData.password}
+                            onChange={handlePasswordChange}
+                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 border-gray-300 ${
+                                errors.password ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                            }`}
+                            placeholder="6자 이상"
                         />
+                        {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                        {passwordStrength && !errors.password && (
+                            <p
+                                className={`text-sm mt-1 ${
+                                    passwordStrength === '강함'
+                                        ? 'text-green-500'
+                                        : passwordStrength === '보통'
+                                          ? 'text-yellow-500'
+                                          : 'text-red-500'
+                                }`}
+                            >
+                                비밀번호 강도: {passwordStrength}
+                            </p>
+                        )}
                     </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        onClick={handleSignup}
-                        className="w-full py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors mt-6"
-                    >
-                        회원가입
-                    </motion.button>
+                    {/* 비밀번호 확인 */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2 text-gray-900">비밀번호 확인</label>
+                        <input
+                            type="password"
+                            value={formData.confirmPassword}
+                            onChange={handleConfirmPasswordChange}
+                            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 border-gray-300 ${
+                                errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                            }`}
+                            placeholder="비밀번호 재입력"
+                        />
+                        {errors.confirmPassword && (
+                            <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                        )}
+                        {!errors.confirmPassword &&
+                            formData.confirmPassword &&
+                            formData.password === formData.confirmPassword && (
+                                <p className="text-green-500 text-sm mt-1">✓ 비밀번호가 일치합니다</p>
+                            )}
+                    </div>
 
-                    <p className="text-center text-gray-600 text-sm mt-4">
-                        이미 계정이 있으신가요?{' '}
-                        <button
-                            onClick={() => router.push('/auth/login')}
-                            className="text-blue-500 font-semibold hover:underline"
-                        >
-                            로그인
-                        </button>
-                    </p>
-                </div>
-            </motion.div>
+                    <button
+                        type="submit"
+                        disabled={loading || Object.values(errors).some((err) => err !== '')}
+                        className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? '처리중...' : '회원가입'}
+                    </button>
+                </form>
+
+                <p className="text-center text-sm text-gray-600 mt-4">
+                    이미 계정이 있으신가요?{' '}
+                    <a href="/auth/signin" className="text-blue-500 hover:underline">
+                        로그인
+                    </a>
+                </p>
+            </div>
         </div>
     );
-};
-
-export default SignupPage;
+}

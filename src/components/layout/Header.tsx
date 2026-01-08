@@ -1,5 +1,6 @@
 'use client';
 
+import { useUnreadCount } from '@/query/common';
 import { useAuthStore } from '@/store/useAuthStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, PenSquare, Search } from 'lucide-react';
@@ -16,6 +17,7 @@ export const Header = () => {
     const { user, loading } = useAuthStore();
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
+    const { data: notiLength } = useUnreadCount();
 
     return (
         <motion.header
@@ -53,7 +55,9 @@ export const Header = () => {
                                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative"
                                 >
                                     <Bell className="w-6 h-6 text-gray-600" />
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                                    {notiLength !== 0 && (
+                                        <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full" />
+                                    )}
                                 </button>
 
                                 <AnimatePresence>

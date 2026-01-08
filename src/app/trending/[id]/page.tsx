@@ -1,14 +1,15 @@
 'use client';
 
 import { PostDetailActions } from '@/components/PostDetailsActions';
-import { checkIfLiked } from '@/lib/supabase/posts';
 import {
+    useCheckLike,
     useCommentList,
     useDeleteComment,
+    useDeleteLike,
     usePostComment,
     useSelectPost,
-    useToggleLike,
     useUpdateComment,
+    useUpdateLike,
 } from '@/query/posts';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTrendingStore } from '@/store/useTrendingStore';
@@ -21,14 +22,6 @@ import { useEffect, useRef, useState } from 'react';
 const DetailPage = () => {
     const { user } = useAuthStore();
     const { selectedPost, setSelectedPost, setCommentList, commentList } = useTrendingStore();
-
-    const commentMutation = usePostComment();
-    const deleteCommentMutation = useDeleteComment();
-    const updateCommentMutation = useUpdateComment();
-
-    const menuRef = useRef<HTMLDivElement>(null);
-    const params = useParams();
-
     const [postId, setPostId] = useState<string>('');
     const [comment, setComment] = useState('');
     const [liked, setLiked] = useState(false);
@@ -38,6 +31,17 @@ const DetailPage = () => {
 
     const { data: postData, isSuccess } = useSelectPost(postId);
     const { data: commentData, isSuccess: isSuccesscommentData } = useCommentList(postId);
+    const { data: likeCheck, isSuccess: isSuccessLikeCheck } = useCheckLike(postId);
+
+    const commentMutation = usePostComment();
+    const deleteCommentMutation = useDeleteComment();
+    const updateCommentMutation = useUpdateComment();
+
+    const updateLikeMutation = useUpdateLike();
+    const deleteLikeMutation = useDeleteLike();
+
+    const menuRef = useRef<HTMLDivElement>(null);
+    const params = useParams();
 
     const mockComments = [
         { id: 1, author: 'UserA', content: '정말 유익한 정보네요! 감사합니다.', time: '1시간 전' },
@@ -81,7 +85,6 @@ const DetailPage = () => {
 
     useEffect(() => {
         if (postData && isSuccess) {
-            console.log(postData);
             setSelectedPost(postData);
         }
     }, [postId, postData, isSuccess]);
@@ -91,6 +94,13 @@ const DetailPage = () => {
             setCommentList(commentData);
         }
     }, [postId, commentData, isSuccesscommentData]);
+
+    useEffect(() => {
+        if (likeCheck && isSuccessLikeCheck) {
+            console.log(likeCheck);
+            setLiked(likeCheck);
+        }
+    }, [postId, likeCheck, isSuccessLikeCheck]);
 
     // 메뉴 외부 클릭 감지
     useEffect(() => {
@@ -132,7 +142,7 @@ const DetailPage = () => {
         setEditContent('');
     };
 
-    const handleEditSave = async (commentId: string) => {
+    const handleEditSave = (commentId: string) => {
         if (!editContent.trim()) return;
         if (!confirm('정말 이 댓글을 수정하시겠습니까?')) return;
 
@@ -152,7 +162,7 @@ const DetailPage = () => {
         );
     };
 
-    const handleDelete = async (commentId: string) => {
+    const handleDelete = (commentId: string) => {
         if (!confirm('정말 이 댓글을 삭제하시겠습니까?')) return;
 
         deleteCommentMutation.mutate(commentId, {
@@ -166,19 +176,32 @@ const DetailPage = () => {
         });
     };
 
-    useEffect(() => {
-        checkIfLiked(postId).then(setLiked);
-    }, [postId]);
-
     // 좋아요 토글
-    const handleToggleLike = async () => {
-        try {
-            const result = await useToggleLike(postId);
-            console.log(result);
-            setLiked(result.isLiked);
-        } catch (error) {
-            console.error('좋아요 처리 실패:', error);
+    const handleToggleLike = () => {
+        if (!user) {
             alert('로그인이 필요합니다.');
+            return;
+        }
+
+        const previousLiked = liked;
+        setLiked(!liked);
+
+        if (previousLiked) {
+            deleteLikeMutation.mutate(postId, {
+                onError: (error) => {
+                    setLiked(previousLiked);
+                    console.error('좋아요 취소 실패:', error);
+                    alert(error instanceof Error ? error.message : '좋아요 취소에 실패했습니다.');
+                },
+            });
+        } else {
+            updateLikeMutation.mutate(postId, {
+                onError: (error) => {
+                    setLiked(previousLiked);
+                    console.error('좋아요 추가 실패:', error);
+                    alert(error instanceof Error ? error.message : '좋아요 추가에 실패했습니다.');
+                },
+            });
         }
     };
 
@@ -235,7 +258,7 @@ const DetailPage = () => {
                             }`}
                         >
                             <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-                            <span>{(selectedPost.like_count ?? 0) + (liked ? 1 : 0)}</span>
+                            <span>{selectedPost.like_count ?? 0}</span>
                         </motion.button>
                         <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
                             <MessageCircle className={`w-5 h-5`} />

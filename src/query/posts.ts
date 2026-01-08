@@ -77,7 +77,7 @@ export const useUpdatePost = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({
+        mutationFn: ({
             post,
         }: {
             post: {
@@ -105,7 +105,7 @@ export const useDeletePost = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (id: string) => deletePost(id),
+        mutationFn: (id: string) => deletePost(id),
         onSuccess: () => {
             // 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -124,7 +124,7 @@ export const useCommentList = (postId: string) => {
 export const usePostComment = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ content, post_id }: CommentPayload) => createComment({ content, post_id }),
+        mutationFn: ({ content, post_id }: CommentPayload) => createComment({ content, post_id }),
         onSuccess: () => {
             // 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -136,8 +136,7 @@ export const usePostComment = () => {
 export const useUpdateComment = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id: commentId, content }: UpdateCommentPayload) =>
-            updateComment({ id: commentId, content }),
+        mutationFn: ({ id: commentId, content }: UpdateCommentPayload) => updateComment({ id: commentId, content }),
         onSuccess: () => {
             // 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ['comments'] });
@@ -147,7 +146,7 @@ export const useUpdateComment = () => {
 export const useDeleteComment = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (commentId: string) => deleteComment(commentId),
+        mutationFn: (commentId: string) => deleteComment(commentId),
         onSuccess: () => {
             // 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -156,14 +155,36 @@ export const useDeleteComment = () => {
     });
 };
 
-export const useToggleLike = async (post_id: string) => {
-    const isLiked = await checkIfLiked(post_id);
+// query/posts.ts
 
-    if (isLiked) {
-        await deleteLike(post_id);
-        return { action: 'unliked', isLiked: false };
-    } else {
-        await createLike(post_id);
-        return { action: 'liked', isLiked: true };
-    }
+export const useCheckLike = (postId: string) => {
+    return useQuery({
+        queryKey: ['likes', postId],
+        queryFn: () => checkIfLiked(postId),
+        enabled: !!postId,
+    });
+};
+
+export const useUpdateLike = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (postId: string) => createLike(postId),
+        onSuccess: (data, postId) => {
+            queryClient.invalidateQueries({ queryKey: ['likes', postId] });
+            queryClient.invalidateQueries({ queryKey: ['posts', postId] });
+            queryClient.invalidateQueries({ queryKey: ['trending-posts', postId] });
+        },
+    });
+};
+
+export const useDeleteLike = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (postId: string) => deleteLike(postId),
+        onSuccess: (data, postId) => {
+            queryClient.invalidateQueries({ queryKey: ['likes', postId] });
+            queryClient.invalidateQueries({ queryKey: ['posts', postId] });
+            queryClient.invalidateQueries({ queryKey: ['trending-posts', postId] });
+        },
+    });
 };

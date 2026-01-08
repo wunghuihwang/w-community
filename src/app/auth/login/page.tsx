@@ -2,7 +2,6 @@
 import { WLogo } from '@/components/header/WLogo';
 import useSupabaseBrowser from '@/lib/supabase/supabase-browser';
 import { useLoginRequest } from '@/query/auth';
-import { useAuthStore } from '@/store/useAuthStore';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -10,7 +9,6 @@ import { useState } from 'react';
 const LoginPage = () => {
     const router = useRouter();
     const supabase = useSupabaseBrowser();
-    const { setUser } = useAuthStore();
     const loginMutation = useLoginRequest();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

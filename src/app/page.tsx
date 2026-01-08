@@ -10,12 +10,8 @@ const HomePage = () => {
     const router = useRouter();
     const { filterParams, setFilterParams, setPost, post } = usePostsStore();
     const [activeTab, setActiveTab] = useState('latest');
-    // const { data: postList, isSuccess } = usePostList();
-    const postListmutate = usePostList();
-    // page: filterParams.page,
-    // limit: filterParams.limit,
-    // category: filterParams.category,
 
+    const postListmutate = usePostList();
     const { data: trendingPosts, isSuccess: isTrendingSuccess } = useTrendingPost();
 
     useEffect(() => {

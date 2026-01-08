@@ -16,10 +16,6 @@ export async function middleware(request: NextRequest) {
                     return request.cookies.getAll();
                 },
                 setAll(cookiesToSet) {
-                    // 1. request 쿠키 업데이트 (제거 - 필요없음)
-                    // cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-
-                    // 2. response 쿠키 설정
                     cookiesToSet.forEach(({ name, value, options }) =>
                         supabaseResponse.cookies.set(name, value, options),
                     );

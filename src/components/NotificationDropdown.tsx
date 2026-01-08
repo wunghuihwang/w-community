@@ -1,4 +1,4 @@
-import { useNotiList } from '@/query/common';
+import { useMarkAllAsRead, useMarkNotificationAsRead, useNotiList, useUnreadCount } from '@/query/common';
 import { useAuthStore } from '@/store/useAuthStore';
 import { motion } from 'framer-motion';
 import { Bell, Heart, MessageCircle, User } from 'lucide-react';
@@ -48,21 +48,25 @@ export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onC
         },
     ]);
 
+    const { data: unreadCount } = useUnreadCount();
+    const markAsRead = useMarkNotificationAsRead();
+    const markAllAsRead = useMarkAllAsRead();
+
+    // 개별 알림 클릭 시
+    const handleNotificationClick = (notificationId: string) => {
+        markAsRead.mutate(notificationId);
+    };
+
+    // 모두 읽기 버튼 클릭 시
+    const handleMarkAllAsRead = () => {
+        markAllAsRead.mutate();
+    };
+
     useEffect(() => {
         if (!user) return;
 
         setUserId(user.id);
     }, [user]);
-
-    const unreadCount = notifications.filter((n) => !n.read).length;
-
-    const markAsRead = (id: number) => {
-        setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    };
-
-    const markAllAsRead = () => {
-        setNotifications(notifications.map((n) => ({ ...n, read: true })));
-    };
 
     if (!isOpen) return null;
 
@@ -82,9 +86,14 @@ export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onC
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                     <div>
                         <h3 className="font-bold text-gray-900">알림</h3>
-                        {unreadCount > 0 && <p className="text-sm text-blue-500">{unreadCount}개의 새 알림</p>}
+                        {unreadCount && unreadCount > 0 && (
+                            <p className="text-sm text-blue-500">{unreadCount}개의 새 알림</p>
+                        )}
                     </div>
-                    <button onClick={markAllAsRead} className="text-sm text-blue-500 hover:text-blue-600 font-medium">
+                    <button
+                        onClick={handleMarkAllAsRead}
+                        className="text-sm text-blue-500 hover:text-blue-600 font-medium"
+                    >
                         모두 읽음
                     </button>
                 </div>
@@ -107,7 +116,7 @@ export const NotificationDropdown = ({ isOpen, onClose }: { isOpen: boolean; onC
                                     !notif.read ? 'bg-blue-50' : ''
                                 }`}
                                 onClick={() => {
-                                    markAsRead(notif.id);
+                                    handleNotificationClick(notif.id);
                                     router.push(`/posts/${notif.post_id}`);
                                 }}
                             >
